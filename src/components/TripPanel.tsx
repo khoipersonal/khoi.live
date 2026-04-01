@@ -44,7 +44,7 @@ function VideoEmbed({ trip }: { trip: Trip }) {
 
 export default function TripPanel({ trip, onClose }: TripPanelProps) {
   return (
-    <div className="animate-float-in absolute right-0 top-0 z-1000 flex h-full w-full flex-col overflow-hidden bg-deep/95 backdrop-blur-xl sm:w-[420px] lg:w-[480px]">
+    <div className="absolute bottom-0 left-0 right-0 z-1000 flex h-2/3 w-full flex-col overflow-hidden rounded-t-2xl bg-deep/95 backdrop-blur-xl animate-slide-up sm:left-auto sm:top-0 sm:h-full sm:w-[420px] sm:rounded-t-none sm:animate-float-in lg:w-[480px]">
       <div className="flex items-center justify-between border-b border-surface-light/50 px-6 py-4">
         <div className="flex items-center gap-3">
           {trip.isCurrent && (
@@ -82,30 +82,11 @@ export default function TripPanel({ trip, onClose }: TripPanelProps) {
           )}
         </div>
 
-        <div className="px-6 py-4">
-          <p className="text-base leading-relaxed text-mist/90">{trip.description}</p>
-        </div>
-
         {trip.videoUrl && (
           <div className="px-6 pb-6">
-            <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-ghost">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M5.25 10.5V3.5L10.5 7l-5.25 3.5z" fill="currentColor" />
-              </svg>
-              Set Recording
-            </div>
             <VideoEmbed trip={trip} />
           </div>
         )}
-      </div>
-
-      <div className="border-t border-surface-light/50 px-6 py-4">
-        <div className="flex items-center justify-between text-xs text-ghost">
-          <span>
-            {trip.lat.toFixed(4)}, {trip.lng.toFixed(4)}
-          </span>
-          <span className="font-display italic text-mist">Khoi's World Tour</span>
-        </div>
       </div>
     </div>
   )

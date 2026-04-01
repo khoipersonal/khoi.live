@@ -1,4 +1,4 @@
-# Khoi's World Tour
+# khoi.live
 
 An interactive map documenting DJ sets around the world.
 

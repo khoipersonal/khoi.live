@@ -26,7 +26,12 @@ export default function App() {
         selectedTrip={selectedTrip}
         onSelectTrip={handleSelectTrip}
         isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
+        onToggle={() => {
+          const opening = !sidebarOpen
+          setSidebarOpen(opening)
+          if (opening) setSelectedTrip(null)
+        }}
+        hideMobileToggle={!!selectedTrip}
       />
 
       <div className="relative flex-1">

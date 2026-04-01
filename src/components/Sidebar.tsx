@@ -6,6 +6,7 @@ interface SidebarProps {
   onSelectTrip: (trip: Trip) => void
   isOpen: boolean
   onToggle: () => void
+  hideMobileToggle?: boolean
 }
 
 function formatShortDate(dateStr: string): string {
@@ -21,6 +22,7 @@ export default function Sidebar({
   onSelectTrip,
   isOpen,
   onToggle,
+  hideMobileToggle,
 }: SidebarProps) {
   const sorted = [...trips].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -31,7 +33,7 @@ export default function Sidebar({
       {/* Mobile toggle */}
       <button
         onClick={onToggle}
-        className="absolute top-4 left-4 z-1000 flex h-10 w-10 items-center justify-center rounded-xl bg-surface/90 text-mist backdrop-blur-lg transition-colors hover:bg-surface-light hover:text-fg sm:hidden"
+        className={`absolute top-4 left-4 z-1000 flex h-10 w-10 items-center justify-center rounded-xl bg-surface/90 text-mist backdrop-blur-lg transition-colors hover:bg-surface-light hover:text-fg sm:hidden ${hideMobileToggle || isOpen ? 'hidden' : ''}`}
         aria-label="Toggle sidebar"
       >
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -49,10 +51,8 @@ export default function Sidebar({
         `}
       >
         <div className="shrink-0 px-5 pt-6 pb-4">
-          <h1 className="font-display text-2xl tracking-tight text-fg">
-            Khoi's
-            <br />
-            <span className="text-3xl italic text-accent">World Tour</span>
+          <h1 className="font-display text-3xl italic tracking-tight text-fg">
+            khoi<span className="text-accent">.live</span>
           </h1>
           <p className="mt-2 text-xs text-ghost">
             {trips.length} stops &middot;{' '}
@@ -114,9 +114,12 @@ export default function Sidebar({
         </div>
 
         <div className="shrink-0 border-t border-surface-light/30 px-5 py-4">
-          <p className="text-center text-[10px] uppercase tracking-[0.2em] text-ghost">
-            DJ &middot; Traveler
-          </p>
+          <a
+            href="mailto:bookings@khoi.live?subject=Booking%20Inquiry&body=Hi%20Khoi%2C%0A%0AI'd%20like%20to%20inquire%20about%20booking%20you%20for%20an%20event.%0A%0ADetails%3A%0A"
+            className="block text-center text-[10px] uppercase tracking-[0.2em] text-ghost transition-colors hover:text-accent"
+          >
+            Bookings
+          </a>
         </div>
       </div>
 

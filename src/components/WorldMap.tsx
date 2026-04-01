@@ -1,7 +1,17 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, ZoomControl, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import trips, { type Trip } from '../data/trips'
+
+const TILE_URLS = {
+  day: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  night: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+} as const
+
+function isDaytime(): boolean {
+  const hour = new Date().getHours()
+  return hour >= 6 && hour < 18
+}
 
 const PIN_W = 36
 const PIN_H = 46
@@ -10,10 +20,10 @@ const IMG_SIZE = 24
 function createMarkerIcon(trip: Trip, isSelected: boolean): L.DivIcon {
   const isCurrent = trip.isCurrent
   const scale = isSelected ? 1.15 : 1
-  const pinColor = isCurrent ? '#d63000' : isSelected ? '#c99a00' : '#555568'
+  const pinColor = isCurrent ? '#ff3d00' : isSelected ? '#f5c542' : '#a8d8ea'
   const shadow = isCurrent || isSelected
     ? `filter:drop-shadow(0 2px 6px ${pinColor}66);`
-    : 'filter:drop-shadow(0 1px 3px rgba(0,0,0,0.2));'
+    : 'filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4));'
 
   const initial = trip.city.charAt(0).toUpperCase()
 
@@ -50,7 +60,24 @@ function MapUpdater({ selectedTrip }: { selectedTrip: Trip | null }) {
 
   useEffect(() => {
     if (selectedTrip) {
-      map.flyTo([selectedTrip.lat, selectedTrip.lng], 6, {
+      const isMobile = window.innerWidth < 640
+      const targetPoint = map.project([selectedTrip.lat, selectedTrip.lng], 6)
+
+      let offsetX = 0
+      let offsetY = 0
+
+      if (isMobile) {
+        const panelHeight = window.innerHeight * (2 / 3)
+        offsetY = panelHeight / 3
+      } else {
+        const panelWidth = window.innerWidth >= 1024 ? 480 : 420
+        offsetX = panelWidth / 2
+      }
+
+      const offsetPoint = L.point(targetPoint.x + offsetX, targetPoint.y + offsetY)
+      const offsetLatLng = map.unproject(offsetPoint, 6)
+
+      map.flyTo(offsetLatLng, 6, {
         duration: 1.5,
         easeLinearity: 0.25,
       })
@@ -67,6 +94,14 @@ interface WorldMapProps {
 
 export default function WorldMap({ selectedTrip, onSelectTrip }: WorldMapProps) {
   const markersRef = useRef<Map<string, L.Marker>>(new Map())
+  const [day, setDay] = useState(isDaytime)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDay(isDaytime())
+    }, 60_000)
+    return () => clearInterval(interval)
+  }, [])
 
   const sortedTrips = useMemo(
     () =>
@@ -86,6 +121,8 @@ export default function WorldMap({ selectedTrip, onSelectTrip }: WorldMapProps) 
     return current ? [current.lat, current.lng] : [20, 100]
   }, [])
 
+  const routeColor = day ? '#ff3d0033' : '#ff3d0044'
+
   return (
     <MapContainer
       center={center}
@@ -93,20 +130,21 @@ export default function WorldMap({ selectedTrip, onSelectTrip }: WorldMapProps) 
       minZoom={2}
       maxZoom={18}
       zoomControl={false}
-      className="h-full w-full"
+      className={`h-full w-full ${day ? 'map-day' : 'map-night'}`}
       worldCopyJump={true}
     >
       <ZoomControl position="bottomright" />
 
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        key={day ? 'day' : 'night'}
+        url={day ? TILE_URLS.day : TILE_URLS.night}
         subdomains="abcd"
       />
 
       <Polyline
         positions={routePositions}
         pathOptions={{
-          color: '#d6300044',
+          color: routeColor,
           weight: 2,
           dashArray: '8 6',
           className: 'trip-line',
