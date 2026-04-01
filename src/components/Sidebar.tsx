@@ -24,9 +24,17 @@ export default function Sidebar({
   onToggle,
   hideMobileToggle,
 }: SidebarProps) {
-  const sorted = [...trips].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  )
+  const sorted = [...trips].sort((a, b) => {
+    if (a.isCurrent) return -1
+    if (b.isCurrent) return 1
+
+    const aIsSameCityAsCurrent = trips.some((t) => t.isCurrent && t.city === a.city)
+    const bIsSameCityAsCurrent = trips.some((t) => t.isCurrent && t.city === b.city)
+    if (aIsSameCityAsCurrent && !bIsSameCityAsCurrent) return -1
+    if (!aIsSameCityAsCurrent && bIsSameCityAsCurrent) return 1
+
+    return new Date(b.date).getTime() - new Date(a.date).getTime()
+  })
 
   return (
     <>

@@ -13,46 +13,97 @@ function isDaytime(): boolean {
   return hour >= 6 && hour < 18
 }
 
-const PIN_W = 36
-const PIN_H = 46
-const IMG_SIZE = 24
+const COUNTRY_FLAGS: Record<string, string> = {
+  'Malaysia': '🇲🇾',
+  'Singapore': '🇸🇬',
+  'Thailand': '🇹🇭',
+  'Japan': '🇯🇵',
+  'Indonesia': '🇮🇩',
+  'Vietnam': '🇻🇳',
+  'South Korea': '🇰🇷',
+  'Australia': '🇦🇺',
+  'Germany': '🇩🇪',
+  'UK': '🇬🇧',
+  'USA': '🇺🇸',
+  'France': '🇫🇷',
+  'Spain': '🇪🇸',
+  'Netherlands': '🇳🇱',
+  'Brazil': '🇧🇷',
+  'Mexico': '🇲🇽',
+  'India': '🇮🇳',
+  'China': '🇨🇳',
+  'Philippines': '🇵🇭',
+  'Cambodia': '🇰🇭',
+}
 
 function createMarkerIcon(trip: Trip, isSelected: boolean): L.DivIcon {
   const isCurrent = trip.isCurrent
-  const scale = isSelected ? 1.15 : 1
-  const pinColor = isCurrent ? '#ff3d00' : isSelected ? '#f5c542' : '#a8d8ea'
-  const shadow = isCurrent || isSelected
-    ? `filter:drop-shadow(0 2px 6px ${pinColor}66);`
-    : 'filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4));'
+  const isActive = isCurrent || isSelected
+  const flag = COUNTRY_FLAGS[trip.country] ?? '📍'
 
-  const initial = trip.city.charAt(0).toUpperCase()
+  if (!isActive) {
+    const dotSize = 22
+    return L.divIcon({
+      className: '',
+      iconSize: [dotSize, dotSize],
+      iconAnchor: [dotSize / 2, dotSize / 2],
+      html: `
+        <div style="
+          width:${dotSize}px;height:${dotSize}px;cursor:pointer;
+          border-radius:50%;
+          background:rgba(30,30,40,0.7);
+          border:1.5px solid rgba(255,255,255,0.15);
+          display:flex;align-items:center;justify-content:center;
+          font-size:12px;line-height:1;
+          filter:drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+          transition:transform 0.2s ease;
+        " onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"
+        >${flag}</div>
+      `,
+    })
+  }
+
+  const pinW = 38
+  const pinH = 48
+  const imgSize = 26
+  const pinColor = isCurrent ? '#ff3d00' : '#f5c542'
+  const scale = isSelected ? 1.1 : 1
 
   return L.divIcon({
     className: '',
-    iconSize: [PIN_W, PIN_H],
-    iconAnchor: [PIN_W / 2, PIN_H],
-    popupAnchor: [0, -PIN_H],
+    iconSize: [pinW, pinH],
+    iconAnchor: [pinW / 2, pinH],
+    popupAnchor: [0, -pinH],
     html: `
-      <div style="position:relative;width:${PIN_W}px;height:${PIN_H}px;cursor:pointer;
+      <div style="position:relative;width:${pinW}px;height:${pinH}px;cursor:pointer;
         transform:scale(${scale});transform-origin:bottom center;transition:transform 0.2s ease;">
-        <svg width="${PIN_W}" height="${PIN_H}" viewBox="0 0 36 46" fill="none" xmlns="http://www.w3.org/2000/svg"
-          style="${shadow}">
-          <path d="M18 46C18 46 34 28.35 34 17C34 8.16 26.84 1 18 1S2 8.16 2 17C2 28.35 18 46 18 46Z"
+        <svg width="${pinW}" height="${pinH}" viewBox="0 0 38 48" fill="none" xmlns="http://www.w3.org/2000/svg"
+          style="filter:drop-shadow(0 2px 6px ${pinColor}55);">
+          <path d="M19 48C19 48 36 29.5 36 17.7C36 8.5 28.39 1 19 1S2 8.5 2 17.7C2 29.5 19 48 19 48Z"
             fill="${pinColor}"/>
-          <circle cx="18" cy="17" r="${IMG_SIZE / 2}" fill="white"/>
+          <circle cx="19" cy="17.7" r="${imgSize / 2}" fill="white"/>
         </svg>
         <div style="
           position:absolute;
-          top:${17 - IMG_SIZE / 2}px;left:${(PIN_W - IMG_SIZE) / 2}px;
-          width:${IMG_SIZE}px;height:${IMG_SIZE}px;
+          top:${17.7 - imgSize / 2}px;left:${(pinW - imgSize) / 2}px;
+          width:${imgSize}px;height:${imgSize}px;
           border-radius:50%;overflow:hidden;
           display:flex;align-items:center;justify-content:center;
-          font-family:var(--font-display);font-size:13px;font-weight:500;
-          color:${pinColor};
-        ">${initial}</div>
+          font-size:15px;line-height:1;
+        ">${flag}</div>
       </div>
     `,
   })
+}
+
+function getZoomForTrip(trip: Trip): number {
+  const hasNearby = trips.some(
+    (t) =>
+      t.id !== trip.id &&
+      Math.abs(t.lat - trip.lat) < 0.05 &&
+      Math.abs(t.lng - trip.lng) < 0.05
+  )
+  return hasNearby ? 14 : 6
 }
 
 function MapUpdater({ selectedTrip }: { selectedTrip: Trip | null }) {
@@ -60,8 +111,9 @@ function MapUpdater({ selectedTrip }: { selectedTrip: Trip | null }) {
 
   useEffect(() => {
     if (selectedTrip) {
+      const zoom = getZoomForTrip(selectedTrip)
       const isMobile = window.innerWidth < 640
-      const targetPoint = map.project([selectedTrip.lat, selectedTrip.lng], 6)
+      const targetPoint = map.project([selectedTrip.lat, selectedTrip.lng], zoom)
 
       let offsetX = 0
       let offsetY = 0
@@ -75,9 +127,9 @@ function MapUpdater({ selectedTrip }: { selectedTrip: Trip | null }) {
       }
 
       const offsetPoint = L.point(targetPoint.x + offsetX, targetPoint.y + offsetY)
-      const offsetLatLng = map.unproject(offsetPoint, 6)
+      const offsetLatLng = map.unproject(offsetPoint, zoom)
 
-      map.flyTo(offsetLatLng, 6, {
+      map.flyTo(offsetLatLng, zoom, {
         duration: 1.5,
         easeLinearity: 0.25,
       })
